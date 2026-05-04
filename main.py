@@ -8,7 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.infrastructure.config import get_settings
-from app.infrastructure.redis.client import close_redis, initialize_redis
+from app.infrastructure.redis.client import close_redis, get_redis_client, initialize_redis
+from app.infrastructure.security import (
+    APIKeyManager,
+    RedisAPIKeyRepository,
+    initialize_default_keys,
+    set_api_key_manager,
+)
 from app.presentation.api.middleware import RequestLoggingMiddleware
 from app.presentation.api.routes import router as rate_limit_router
 from logger import get_logger, setup_logging
@@ -28,6 +34,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize Redis connection
     await initialize_redis(settings.redis_url, settings.redis_max_connections)
     logger.info("Redis connection initialized")
+    
+    # Initialize API key manager with Redis
+    redis_client_wrapper = await get_redis_client()
+    redis_client = redis_client_wrapper.client
+    repository = RedisAPIKeyRepository(redis_client)
+    manager = APIKeyManager(repository)
+    set_api_key_manager(manager)
+    logger.info("API key manager initialized")
+    
+    # Initialize default API keys
+    await initialize_default_keys(repository)
+    logger.info("Default API keys initialized")
     
     yield
     
