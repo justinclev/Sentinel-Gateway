@@ -92,7 +92,7 @@ lint:mypy:
     - poetry install --with dev --no-interaction --no-ansi
   script:
     - poetry run mypy app/
-  allow_failure: true  # Can be strict if your codebase is fully typed
+  allow_failure: true # Can be strict if your codebase is fully typed
   only:
     - branches
     - merge_requests
