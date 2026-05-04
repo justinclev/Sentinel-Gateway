@@ -1,0 +1,89 @@
+{
+	"project_metadata": {
+		"name": "Sentinel-Distributed-Gateway",
+		"version": "1.0.0",
+		"description": "A high-performance, asynchronous API Gateway built with Python and Redis. Designed for service-level rate limiting, resilient traffic management, and automated burst alerting.",
+		"architect": "Senior Systems Engineer"
+	},
+	"services": {
+		"corr": {
+			"url": "https://httpbin.org",
+			"description": "Document Correspondence Service - Handles all internal and external document routing and archival requests.",
+			"rate_limit": {
+				"max_requests": 20,
+				"window_seconds": 60,
+				"alert_threshold": 0.8
+			},
+			"alerting": {
+				"channel": "slack_dev_team",
+				"severity": "warning"
+			},
+			"retry_policy": {
+				"max_retries": 3,
+				"backoff_factor": 2
+			},
+			"allowed_methods": ["GET", "POST"]
+		},
+		"billing": {
+			"url": "https://jsonplaceholder.typicode.com",
+			"description": "Payments and Billing Service - High-security endpoint for transaction processing and invoice generation.",
+			"rate_limit": {
+				"max_requests": 5,
+				"window_seconds": 60,
+				"alert_threshold": 0.6
+			},
+			"alerting": {
+				"channel": "pager_duty_critical",
+				"severity": "critical"
+			},
+			"retry_policy": {
+				"max_retries": 1,
+				"backoff_factor": 1
+			},
+			"allowed_methods": ["GET"]
+		},
+		"auth": {
+			"url": "https://api.github.com",
+			"description": "Identity and Access Service - Manages user sessions, OAuth2 flows, and permission scoping.",
+			"rate_limit": {
+				"max_requests": 50,
+				"window_seconds": 300,
+				"alert_threshold": 0.9
+			},
+			"alerting": {
+				"channel": "log_only",
+				"severity": "info"
+			},
+			"retry_policy": {
+				"max_retries": 2,
+				"backoff_factor": 1.5
+			},
+			"allowed_methods": ["GET", "POST", "PUT"]
+		}
+	},
+	"settings": {
+		"default_timeout": 5.0,
+		"strip_prefix": true,
+		"global_default_limit": {
+			"max_requests": 10,
+			"window_seconds": 60,
+			"alert_threshold": 0.8
+		},
+		"alerting_channels": {
+			"slack_dev_team": {
+				"type": "webhook",
+				"url": "https://hooks.slack.com/services/T000/B000/XXXX",
+				"enabled": true
+			},
+			"pager_duty_critical": {
+				"type": "pagerduty",
+				"integration_key": "your-key-here",
+				"enabled": false
+			},
+			"log_only": {
+				"type": "log",
+				"enabled": true
+			}
+		}
+	}
+}
