@@ -15,7 +15,7 @@ from app.infrastructure.security import (
     initialize_default_keys,
     set_api_key_manager,
 )
-from app.presentation.api.middleware import RequestLoggingMiddleware
+from app.presentation.api.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from app.presentation.api.routes import router as rate_limit_router
 from logger import get_logger, setup_logging
 
@@ -43,9 +43,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     set_api_key_manager(manager)
     logger.info("API key manager initialized")
     
-    # Initialize default API keys
-    await initialize_default_keys(repository)
-    logger.info("Default API keys initialized")
+    # Initialize default API keys (development only — never in staging/production)
+    if settings.environment == "development":
+        await initialize_default_keys(repository)
+        logger.info("Default API keys initialized (development mode)")
+    else:
+        logger.info("Skipping default key initialization (environment: %s)", settings.environment)
     
     yield
     
@@ -56,11 +59,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 # Create FastAPI application
+_is_dev = settings.environment == "development"
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="Rate limiter API - implement the core logic",
     lifespan=lifespan,
+    # Disable interactive docs outside development to avoid exposing the API contract
+    docs_url="/docs" if _is_dev else None,
+    redoc_url="/redoc" if _is_dev else None,
+    openapi_url="/openapi.json" if _is_dev else None,
 )
 
 # Configure CORS
@@ -73,7 +81,8 @@ if settings.cors_enabled:
         allow_headers=settings.cors_allow_headers,
     )
 
-# Add custom middleware
+# Add custom middleware (applied in reverse order — SecurityHeaders wraps everything)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 
 # Initialize Prometheus metrics

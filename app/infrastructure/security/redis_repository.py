@@ -154,8 +154,8 @@ class RedisAPIKeyRepository:
             data = await self.redis.get(key)
             if data:
                 key_data = json.loads(data)
-                # Extract hash from Redis key
-                key_hash = key.decode("utf-8").split(":", 1)[1]
+                # Extract hash from Redis key (key is already a str due to decode_responses=True)
+                key_hash = key.split(":", 1)[1]
                 keys.append(
                     APIKey(
                         key_id=key_data["key_id"],

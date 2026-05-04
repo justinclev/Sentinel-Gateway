@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.presentation.api.dependencies import RateLimitServiceDep
-from app.presentation.api.security import AdminKey, AuthenticatedKey, UserKey
+from app.presentation.api.security import AdminKey, AuthenticatedKey, ReadonlyKey, UserKey
 
 # API Router
 router = APIRouter()
@@ -177,7 +177,7 @@ async def reset_rate_limit(
 async def get_usage(
     identifier: str,
     service: RateLimitServiceDep,
-    api_key: AuthenticatedKey,  # Any authenticated key
+    api_key: ReadonlyKey,  # READONLY, USER, or ADMIN
     namespace: str = "default",
 ) -> UsageResponse:
     """
@@ -211,7 +211,7 @@ async def get_usage(
 @router.get("/health", response_model=HealthResponse)
 async def health_check(
     service: RateLimitServiceDep,
-    api_key: AuthenticatedKey,  # Any authenticated key
+    api_key: ReadonlyKey,  # READONLY, USER, or ADMIN
 ) -> HealthResponse:
     """
     Health check endpoint.
