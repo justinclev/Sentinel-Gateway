@@ -1,22 +1,20 @@
-# Sentinel Gateway - Scaffolding
+# Sentinel Gateway
 
-**This is scaffolding only** - the structure is here, but you need to implement the core logic.
+[![CI](https://github.com/justinclev/Sentinel-Gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/justinclev/Sentinel-Gateway/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/justinclev/Sentinel-Gateway/branch/main/graph/badge.svg)](https://codecov.io/gh/justinclev/Sentinel-Gateway)
 
-## What's Included
+High-performance distributed rate limiter API gateway built with FastAPI and Redis.
 
-✅ **File structure** - Clean architecture with domain/application/infrastructure/presentation layers  
-✅ **API routes** - FastAPI endpoints defined with request/response models  
-✅ **Configuration** - Environment-based config with Pydantic  
-✅ **Docker setup** - Dockerfile, docker-compose.yml ready  
-✅ **Testing structure** - Test directories set up
+## Features
 
-## What You Need To Do
-
-❌ **Implement Redis connection** in `app/infrastructure/redis/client.py`  
-❌ **Implement rate limiting algorithm** in `app/infrastructure/redis/rate_limit_repository.py`  
-❌ **Add domain validation** in `app/domain/rate_limit/models.py`  
-❌ **Add business logic** in `app/application/rate_limit_service.py`  
-❌ **Write tests** in `tests/`
+✅ **Fixed Window Counter** - Redis-based rate limiting algorithm  
+✅ **Clean Architecture** - Domain/Application/Infrastructure/Presentation layers  
+✅ **Comprehensive Testing** - 38 unit tests with 81% coverage  
+✅ **FastAPI** - Modern async Python web framework  
+✅ **Redis** - High-performance distributed state  
+✅ **Docker** - Full containerization with docker-compose  
+✅ **CI/CD** - GitHub Actions for testing, linting, and packaging  
+✅ **Horizontal Scaling** - Service factory pattern for multiple instances
 
 ## Quick Start
 
