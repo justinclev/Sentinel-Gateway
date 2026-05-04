@@ -1,5 +1,8 @@
 name: CI
 
+# Force Node.js 24 to avoid deprecation warnings coming in June 2026
+# Note: Some actions may show warnings about being "forced" to Node.js 24
+# This is expected and harmless until action maintainers update their code
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
