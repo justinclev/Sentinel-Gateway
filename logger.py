@@ -19,6 +19,7 @@ def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
     
     handler = logging.StreamHandler(sys.stdout)
     
+    formatter: logging.Formatter
     if json_format:
         formatter = jsonlogger.JsonFormatter(
             "%(asctime)s %(name)s %(levelname)s %(message)s",

@@ -1,10 +1,10 @@
 """API middleware."""
 
 import time
-from collections.abc import Callable
 
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 from logger import get_logger
 
@@ -14,7 +14,9 @@ logger = get_logger(__name__)
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware for logging requests and responses."""
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         """Process and log HTTP request/response."""
         start_time = time.time()
 
