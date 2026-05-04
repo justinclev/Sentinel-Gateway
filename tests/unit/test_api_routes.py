@@ -19,17 +19,17 @@ def mock_service():
 def client_with_mock_service(mock_service):
     """Create test client with mocked service and disabled lifespan."""
     # Import here to avoid circular imports
-    from main import app
     from app.presentation.api.dependencies import get_rate_limit_service
-    
+    from main import app
+
     # Override the dependency
     app.dependency_overrides[get_rate_limit_service] = lambda: mock_service
-    
+
     # Create client without triggering lifespan events
     client = TestClient(app, raise_server_exceptions=False)
-    
+
     yield client
-    
+
     # Cleanup
     app.dependency_overrides.clear()
 
@@ -45,7 +45,7 @@ class TestRateLimitRoutes:
             limit=10,
             remaining=5,
             reset_at=datetime(2026, 5, 4, 12, 0, 0),
-            retry_after=None
+            retry_after=None,
         )
         mock_service.check_rate_limit.return_value = mock_result
 
@@ -55,8 +55,8 @@ class TestRateLimitRoutes:
                 "identifier": "user123",
                 "max_requests": 10,
                 "window_seconds": 60,
-                "namespace": "api"
-            }
+                "namespace": "api",
+            },
         )
 
         assert response.status_code == 200
@@ -77,7 +77,7 @@ class TestRateLimitRoutes:
             limit=10,
             remaining=0,
             reset_at=datetime(2026, 5, 4, 12, 0, 0),
-            retry_after=45
+            retry_after=45,
         )
         mock_service.check_rate_limit.return_value = mock_result
 
@@ -87,8 +87,8 @@ class TestRateLimitRoutes:
                 "identifier": "user123",
                 "max_requests": 10,
                 "window_seconds": 60,
-                "namespace": "api"
-            }
+                "namespace": "api",
+            },
         )
 
         assert response.status_code == 200
@@ -102,11 +102,7 @@ class TestRateLimitRoutes:
         """Test validation for invalid max_requests."""
         response = client_with_mock_service.post(
             "/api/v1/rate-limit/check",
-            json={
-                "identifier": "user123",
-                "max_requests": 0,  # Invalid
-                "window_seconds": 60
-            }
+            json={"identifier": "user123", "max_requests": 0, "window_seconds": 60},  # Invalid
         )
 
         assert response.status_code == 422  # Validation error
@@ -115,11 +111,7 @@ class TestRateLimitRoutes:
         """Test validation for invalid window_seconds."""
         response = client_with_mock_service.post(
             "/api/v1/rate-limit/check",
-            json={
-                "identifier": "user123",
-                "max_requests": 10,
-                "window_seconds": -5  # Invalid
-            }
+            json={"identifier": "user123", "max_requests": 10, "window_seconds": -5},  # Invalid
         )
 
         assert response.status_code == 422  # Validation error
@@ -127,11 +119,7 @@ class TestRateLimitRoutes:
     def test_check_rate_limit_missing_identifier(self, client_with_mock_service):
         """Test validation when identifier is missing."""
         response = client_with_mock_service.post(
-            "/api/v1/rate-limit/check",
-            json={
-                "max_requests": 10,
-                "window_seconds": 60
-            }
+            "/api/v1/rate-limit/check", json={"max_requests": 10, "window_seconds": 60}
         )
 
         assert response.status_code == 422  # Validation error
@@ -141,11 +129,7 @@ class TestRateLimitRoutes:
         mock_service.reset_rate_limit = AsyncMock(return_value=True)
 
         response = client_with_mock_service.post(
-            "/api/v1/rate-limit/reset",
-            json={
-                "identifier": "user123",
-                "namespace": "api"
-            }
+            "/api/v1/rate-limit/reset", json={"identifier": "user123", "namespace": "api"}
         )
 
         assert response.status_code == 204
@@ -156,11 +140,7 @@ class TestRateLimitRoutes:
         mock_service.reset_rate_limit = AsyncMock(return_value=False)
 
         response = client_with_mock_service.post(
-            "/api/v1/rate-limit/reset",
-            json={
-                "identifier": "user123",
-                "namespace": "api"
-            }
+            "/api/v1/rate-limit/reset", json={"identifier": "user123", "namespace": "api"}
         )
 
         # Should return 500 when reset fails
@@ -168,14 +148,10 @@ class TestRateLimitRoutes:
 
     def test_get_usage(self, client_with_mock_service, mock_service):
         """Test get usage endpoint."""
-        mock_service.get_usage.return_value = {
-            "current_count": 5,
-            "window_start": 1234567890
-        }
+        mock_service.get_usage.return_value = {"current_count": 5, "window_start": 1234567890}
 
         response = client_with_mock_service.get(
-            "/api/v1/rate-limit/usage/user123",
-            params={"namespace": "api"}
+            "/api/v1/rate-limit/usage/user123", params={"namespace": "api"}
         )
 
         assert response.status_code == 200

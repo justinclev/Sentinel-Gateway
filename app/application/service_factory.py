@@ -1,8 +1,5 @@
 """Service factory for dependency injection and scalability."""
 
-from functools import lru_cache
-from typing import Optional
-
 from app.application.rate_limit_service import RateLimitService
 from app.domain.rate_limit import RateLimitRepository
 from app.infrastructure.config import Settings, get_settings
@@ -13,7 +10,7 @@ from logger import get_logger
 class ServiceFactory:
     """
     Factory for creating service instances with proper dependency injection.
-    
+
     This enables:
     - Easy testing with mocked dependencies
     - Horizontal scaling by creating multiple instances
@@ -22,13 +19,13 @@ class ServiceFactory:
 
     def __init__(
         self,
-        settings: Optional[Settings] = None,
-        redis_client: Optional[RedisClient] = None,
-        repository: Optional[RateLimitRepository] = None
+        settings: Settings | None = None,
+        redis_client: RedisClient | None = None,
+        repository: RateLimitRepository | None = None,
     ):
         """
         Initialize service factory.
-        
+
         Args:
             settings: Application settings (uses default if None)
             redis_client: Redis client instance (creates new if None)
@@ -50,15 +47,14 @@ class ServiceFactory:
         if self._repository is None:
             redis_client = await self.get_redis_client()
             self._repository = RedisRateLimitRepository(
-                redis_client,
-                key_prefix=self._settings.rate_limit_storage_prefix
+                redis_client, key_prefix=self._settings.rate_limit_storage_prefix
             )
         return self._repository
 
     async def get_rate_limit_service(self) -> RateLimitService:
         """
         Create rate limit service instance.
-        
+
         Returns:
             Configured RateLimitService instance
         """
@@ -68,7 +64,7 @@ class ServiceFactory:
 
 
 # Global factory instance (can be overridden for testing)
-_service_factory: Optional[ServiceFactory] = None
+_service_factory: ServiceFactory | None = None
 
 
 def get_service_factory() -> ServiceFactory:
@@ -88,7 +84,7 @@ def set_service_factory(factory: ServiceFactory) -> None:
 async def create_rate_limit_service() -> RateLimitService:
     """
     Create a new rate limit service instance.
-    
+
     This is useful for creating multiple service instances
     for horizontal scaling or isolated processing.
     """

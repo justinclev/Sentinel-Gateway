@@ -1,10 +1,9 @@
 """API route handlers."""
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.domain.rate_limit import RateLimitStatus
-from app.presentation.api.dependencies import RateLimitServiceDep, SettingsDep
+from app.presentation.api.dependencies import RateLimitServiceDep
 
 # API Router
 router = APIRouter()
@@ -63,11 +62,11 @@ async def check_rate_limit(
 ) -> RateLimitCheckResponse:
     """
     Check if a request is within rate limits.
-    
+
     Args:
         request: Rate limit check parameters
         service: Rate limit service
-        
+
     Returns:
         Rate limit check result
     """
@@ -77,7 +76,7 @@ async def check_rate_limit(
         window_seconds=request.window_seconds,
         namespace=request.namespace,
     )
-    
+
     return RateLimitCheckResponse(
         allowed=result.is_allowed,
         status=result.status.value,
@@ -96,7 +95,7 @@ async def reset_rate_limit(
 ) -> None:
     """
     Reset rate limit for a specific identifier.
-    
+
     Args:
         request: Reset request parameters
         service: Rate limit service
@@ -105,7 +104,7 @@ async def reset_rate_limit(
         identifier=request.identifier,
         namespace=request.namespace,
     )
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -121,17 +120,17 @@ async def get_usage(
 ) -> UsageResponse:
     """
     Get current usage statistics for an identifier.
-    
+
     Args:
         identifier: Unique identifier
         service: Rate limit service
         namespace: Rate limit namespace
-        
+
     Returns:
         Usage statistics
     """
     usage = await service.get_usage(identifier, namespace)
-    
+
     return UsageResponse(
         identifier=identifier,
         namespace=namespace,
@@ -144,15 +143,15 @@ async def get_usage(
 async def health_check(service: RateLimitServiceDep) -> HealthResponse:
     """
     Health check endpoint.
-    
+
     Args:
         service: Rate limit service
-        
+
     Returns:
         Health status
     """
     redis_healthy = await service.health_check()
-    
+
     return HealthResponse(
         status="healthy" if redis_healthy else "degraded",
         redis_healthy=redis_healthy,

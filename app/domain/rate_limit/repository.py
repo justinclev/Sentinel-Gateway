@@ -12,10 +12,10 @@ class RateLimitRepository(ABC):
     async def check_rate_limit(self, config: RateLimitConfig) -> RateLimitResult:
         """
         Check if a request is within rate limits.
-        
+
         Args:
             config: Rate limit configuration
-            
+
         Returns:
             Result indicating whether the request is allowed
         """
@@ -25,11 +25,11 @@ class RateLimitRepository(ABC):
     async def reset_rate_limit(self, identifier: str, namespace: str = "default") -> bool:
         """
         Reset rate limit for a specific identifier.
-        
+
         Args:
             identifier: Unique identifier (user ID, IP, etc.)
             namespace: Rate limit namespace
-            
+
         Returns:
             True if reset was successful
         """
@@ -41,11 +41,11 @@ class RateLimitRepository(ABC):
     ) -> tuple[int, int]:
         """
         Get current usage for an identifier.
-        
+
         Args:
             identifier: Unique identifier
             namespace: Rate limit namespace
-            
+
         Returns:
             Tuple of (current_count, window_start_timestamp)
         """
@@ -55,7 +55,7 @@ class RateLimitRepository(ABC):
     async def health_check(self) -> bool:
         """
         Check if the rate limit storage is healthy.
-        
+
         Returns:
             True if storage is accessible and healthy
         """

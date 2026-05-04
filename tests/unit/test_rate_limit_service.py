@@ -2,12 +2,17 @@
 
 import logging
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from app.application.rate_limit_service import RateLimitService
-from app.domain.rate_limit import RateLimitConfig, RateLimitRepository, RateLimitResult, RateLimitStatus
+from app.domain.rate_limit import (
+    RateLimitConfig,
+    RateLimitRepository,
+    RateLimitResult,
+    RateLimitStatus,
+)
 
 
 @pytest.fixture
@@ -37,15 +42,12 @@ class TestRateLimitService:
             limit=10,
             remaining=5,
             reset_at=datetime.now(),
-            retry_after=None
+            retry_after=None,
         )
         mock_repository.check_rate_limit.return_value = mock_result
 
         result = await service.check_rate_limit(
-            identifier="user123",
-            max_requests=10,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=10, window_seconds=60, namespace="api"
         )
 
         assert result.status == RateLimitStatus.ALLOWED
@@ -71,14 +73,12 @@ class TestRateLimitService:
             limit=10,
             remaining=0,
             reset_at=datetime.now(),
-            retry_after=30
+            retry_after=30,
         )
         mock_repository.check_rate_limit.return_value = mock_result
 
         result = await service.check_rate_limit(
-            identifier="user123",
-            max_requests=10,
-            window_seconds=60
+            identifier="user123", max_requests=10, window_seconds=60
         )
 
         assert result.status == RateLimitStatus.THROTTLED
@@ -96,15 +96,11 @@ class TestRateLimitService:
             limit=10,
             remaining=5,
             reset_at=datetime.now(),
-            retry_after=None
+            retry_after=None,
         )
         mock_repository.check_rate_limit.return_value = mock_result
 
-        await service.check_rate_limit(
-            identifier="user123",
-            max_requests=10,
-            window_seconds=60
-        )
+        await service.check_rate_limit(identifier="user123", max_requests=10, window_seconds=60)
 
         call_args = mock_repository.check_rate_limit.call_args[0][0]
         assert call_args.namespace == "default"

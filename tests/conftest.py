@@ -1,12 +1,13 @@
 """Test configuration and fixtures."""
 
-import pytest
-from httpx import AsyncClient
 from unittest.mock import AsyncMock, MagicMock
 
-from main import app
+import pytest
+from httpx import AsyncClient
+
 from app.infrastructure.redis.client import RedisClient
 from app.infrastructure.redis.rate_limit_repository import RedisRateLimitRepository
+from main import app
 
 
 @pytest.fixture

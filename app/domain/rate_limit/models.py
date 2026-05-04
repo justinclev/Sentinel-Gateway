@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 
-class RateLimitStatus(str, Enum):
+class RateLimitStatus(StrEnum):
     """Status of a rate limit check."""
 
     ALLOWED = "allowed"
@@ -26,10 +26,10 @@ class RateLimitConfig:
         """Validate rate limit configuration."""
         if self.max_requests <= 0:
             raise ValueError("max_requests must be greater than 0")
-        
+
         if self.window_seconds <= 0:
             raise ValueError("window_seconds must be greater than 0")
-        
+
         if not self.identifier:
             raise ValueError("identifier cannot be empty")
 

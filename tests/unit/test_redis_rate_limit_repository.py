@@ -1,8 +1,6 @@
 """Unit tests for Redis rate limit repository."""
 
-import time
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from redis.exceptions import RedisError
@@ -43,7 +41,7 @@ class TestRedisRateLimitRepository:
         # Setup mock - no existing count
         mock_redis = mock_redis_client.client
         mock_redis.get.return_value = None
-        
+
         # Create proper mock pipeline
         mock_pipeline = MagicMock()
         mock_pipeline.incr = MagicMock()
@@ -52,10 +50,7 @@ class TestRedisRateLimitRepository:
         mock_redis.pipeline = MagicMock(return_value=mock_pipeline)
 
         config = RateLimitConfig(
-            identifier="user123",
-            max_requests=5,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=5, window_seconds=60, namespace="api"
         )
 
         result = await repository.check_rate_limit(config)
@@ -73,7 +68,7 @@ class TestRedisRateLimitRepository:
         """Test request within limit is allowed."""
         mock_redis = mock_redis_client.client
         mock_redis.get.return_value = "3"  # 3 requests already made
-        
+
         # Create proper mock pipeline
         mock_pipeline = MagicMock()
         mock_pipeline.incr = MagicMock()
@@ -82,10 +77,7 @@ class TestRedisRateLimitRepository:
         mock_redis.pipeline = MagicMock(return_value=mock_pipeline)
 
         config = RateLimitConfig(
-            identifier="user123",
-            max_requests=5,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=5, window_seconds=60, namespace="api"
         )
 
         result = await repository.check_rate_limit(config)
@@ -104,10 +96,7 @@ class TestRedisRateLimitRepository:
         mock_redis.get.return_value = "5"  # Already at limit
 
         config = RateLimitConfig(
-            identifier="user123",
-            max_requests=5,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=5, window_seconds=60, namespace="api"
         )
 
         result = await repository.check_rate_limit(config)
@@ -128,10 +117,7 @@ class TestRedisRateLimitRepository:
         mock_redis.get.return_value = "10"  # Way over limit
 
         config = RateLimitConfig(
-            identifier="user123",
-            max_requests=5,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=5, window_seconds=60, namespace="api"
         )
 
         result = await repository.check_rate_limit(config)
@@ -148,10 +134,7 @@ class TestRedisRateLimitRepository:
         mock_redis.get.side_effect = RedisError("Connection failed")
 
         config = RateLimitConfig(
-            identifier="user123",
-            max_requests=5,
-            window_seconds=60,
-            namespace="api"
+            identifier="user123", max_requests=5, window_seconds=60, namespace="api"
         )
 
         result = await repository.check_rate_limit(config)
@@ -167,11 +150,11 @@ class TestRedisRateLimitRepository:
     ) -> None:
         """Test resetting rate limit."""
         mock_redis = mock_redis_client.client
-        
+
         # Create async generator for scan_iter
         async def mock_scan(match):
             yield "test_rate_limit:api:user123:12345"
-        
+
         mock_redis.scan_iter = mock_scan
         mock_redis.delete.return_value = 1
 
@@ -186,12 +169,12 @@ class TestRedisRateLimitRepository:
     ) -> None:
         """Test resetting when no keys exist."""
         mock_redis = mock_redis_client.client
-        
+
         # Create empty async generator
         async def mock_scan(match):
             return
             yield  # Make it a generator
-        
+
         mock_redis.scan_iter = mock_scan
 
         result = await repository.reset_rate_limit("user123", "api")
@@ -205,11 +188,11 @@ class TestRedisRateLimitRepository:
     ) -> None:
         """Test reset with Redis error."""
         mock_redis = mock_redis_client.client
-        
+
         # Make scan_iter raise an error immediately
         def mock_scan_error(match):
             raise RedisError("Connection failed")
-        
+
         mock_redis.scan_iter = mock_scan_error
 
         result = await repository.reset_rate_limit("user123", "api")
@@ -222,11 +205,11 @@ class TestRedisRateLimitRepository:
     ) -> None:
         """Test getting current usage."""
         mock_redis = mock_redis_client.client
-        
+
         # Create async generator
         async def mock_scan(match):
             yield "test_rate_limit:api:user123:1234567890"
-        
+
         mock_redis.scan_iter = mock_scan
         mock_redis.get.return_value = "5"
 

@@ -1,7 +1,6 @@
 """Redis client wrapper."""
 
 import logging
-from typing import Any
 
 import redis.asyncio as redis
 from redis.asyncio import Redis
@@ -14,7 +13,7 @@ class RedisClient:
     def __init__(self, url: str, max_connections: int = 50):
         """
         Initialize Redis client.
-        
+
         Args:
             url: Redis connection URL
             max_connections: Maximum number of connections in pool
@@ -32,16 +31,16 @@ class RedisClient:
             self._pool = redis.ConnectionPool.from_url(
                 self._url,
                 max_connections=self._max_connections,
-                decode_responses=True  # Makes responses human-readable strings
+                decode_responses=True,  # Makes responses human-readable strings
             )
-            
+
             # Create the actual client
             self._client = redis.Redis(connection_pool=self._pool)
-            
+
             # Test the connection with a PING
             await self._client.ping()
             self._logger.info("Successfully connected to Redis")
-            
+
         except RedisError as e:
             self._logger.error(f"Failed to connect to Redis: {e}")
             raise
@@ -71,7 +70,6 @@ class RedisClient:
         if not self._client:
             raise RuntimeError("Redis client not connected. Call connect() first.")
         return self._client
-
 
 
 # Global Redis client instance

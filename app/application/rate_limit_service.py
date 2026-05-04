@@ -1,7 +1,6 @@
 """Rate limiting service."""
 
 import logging
-from typing import Protocol
 
 from app.domain.rate_limit import RateLimitConfig, RateLimitRepository, RateLimitResult
 
@@ -12,7 +11,7 @@ class RateLimitService:
     def __init__(self, repository: RateLimitRepository, logger: logging.Logger | None = None):
         """
         Initialize rate limit service.
-        
+
         Args:
             repository: Rate limit storage repository
             logger: Optional logger instance
@@ -29,7 +28,7 @@ class RateLimitService:
     ) -> RateLimitResult:
         """
         Check if a request is within rate limits.
-        
+
         TODO: Add business logic like:
         - Custom rate limit rules per user tier
         - Whitelisting/blacklisting

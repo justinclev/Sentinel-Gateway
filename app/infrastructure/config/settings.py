@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, RedisDsn
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
         return f"redis://{password_part}{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached application settings instance."""
     return Settings()

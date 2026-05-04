@@ -12,9 +12,9 @@ from app.infrastructure.config import Settings, get_settings
 async def get_rate_limit_service() -> RateLimitService:
     """
     Dependency for rate limit service.
-    
+
     Uses service factory for proper dependency injection and scalability.
-    
+
     Returns:
         Configured rate limit service instance
     """
