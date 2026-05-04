@@ -2,34 +2,10 @@
 
 import hashlib
 import secrets
-from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 
+from app.domain.gateway.models import APIKey, APIKeyRole
 from app.infrastructure.security.redis_repository import RedisAPIKeyRepository
-
-
-class APIKeyRole(str, Enum):
-    """API Key roles for authorization."""
-
-    ADMIN = "admin"  # Full access including reset, usage stats
-    USER = "user"  # Rate limit checks only
-    READONLY = "readonly"  # Health checks and usage stats only
-
-
-@dataclass
-class APIKey:
-    """API Key model."""
-
-    key_id: str
-    key_hash: str  # Never store plain keys
-    name: str
-    role: APIKeyRole
-    created_at: datetime
-    expires_at: datetime | None = None
-    is_active: bool = True
-    rate_limit: int | None = None  # Optional rate limit for this key
-    metadata: dict | None = None
 
 
 class APIKeyManager:
@@ -141,21 +117,38 @@ class APIKeyManager:
         """List all API keys."""
         return await self.repository.list_all()
 
+    async def revoke_by_id(self, key_id: str) -> bool:
+        """
+        Revoke an API key by its key_id.
+
+        Args:
+            key_id: The key_id to revoke
+
+        Returns:
+            True if revoked, False if not found
+        """
+        api_key = await self.repository.get_by_id(key_id)
+        if not api_key:
+            return False
+        api_key.is_active = False
+        await self.repository.update(api_key)
+        return True
+
 
 async def initialize_default_keys(repository: RedisAPIKeyRepository) -> None:
     """
     Initialize default API keys for development.
-    
+
     Args:
         repository: Redis repository
     """
     manager = APIKeyManager(repository)
-    
+
     # Check if keys already exist
     existing_keys = await repository.list_all()
     if existing_keys:
         return  # Keys already initialized
-    
+
     # Admin key: sk_admin_dev_12345
     admin_key_plain = "sk_admin_dev_12345"
     admin_key = APIKey(
@@ -167,7 +160,7 @@ async def initialize_default_keys(repository: RedisAPIKeyRepository) -> None:
         metadata={"env": "development"},
     )
     await repository.create(admin_key)
-    
+
     # User key: sk_user_dev_67890
     user_key_plain = "sk_user_dev_67890"
     user_key = APIKey(
@@ -188,7 +181,7 @@ _api_key_manager: APIKeyManager | None = None
 def set_api_key_manager(manager: APIKeyManager) -> None:
     """
     Set the global API key manager instance.
-    
+
     Args:
         manager: APIKeyManager instance to use globally
     """
@@ -199,7 +192,7 @@ def set_api_key_manager(manager: APIKeyManager) -> None:
 def get_api_key_manager() -> APIKeyManager:
     """
     Get the global API key manager instance.
-    
+
     Raises:
         RuntimeError: If manager not initialized
     """

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.presentation.api.dependencies import RateLimitServiceDep
-from app.presentation.api.security import AdminKey, AuthenticatedKey, ReadonlyKey, UserKey
+from app.presentation.api.security import AdminKey, ReadonlyKey, UserKey
 
 # API Router
 router = APIRouter()

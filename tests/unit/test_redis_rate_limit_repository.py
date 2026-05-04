@@ -21,8 +21,10 @@ def mock_redis_client() -> RedisClient:
 
 @pytest.fixture
 def repository(mock_redis_client: RedisClient) -> RedisRateLimitRepository:
-    """Create repository with mock Redis client."""
-    return RedisRateLimitRepository(mock_redis_client, key_prefix="test_rate_limit")
+    """Create repository with mock Redis client, using fixed_window for predictable mocking."""
+    return RedisRateLimitRepository(
+        mock_redis_client, key_prefix="test_rate_limit", algorithm="fixed_window"
+    )
 
 
 class TestRedisRateLimitRepository:
@@ -30,7 +32,7 @@ class TestRedisRateLimitRepository:
 
     def test_get_key(self, repository: RedisRateLimitRepository) -> None:
         """Test Redis key generation."""
-        key = repository._get_key("user123", "api")
+        key = repository._base_key("user123", "api")
         assert key == "test_rate_limit:api:user123"
 
     @pytest.mark.asyncio

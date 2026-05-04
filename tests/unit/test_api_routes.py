@@ -6,7 +6,18 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.domain.gateway.models import APIKey, APIKeyRole
 from app.domain.rate_limit import RateLimitResult, RateLimitStatus
+
+
+def _make_admin_key() -> APIKey:
+    return APIKey(
+        key_id="admin_test",
+        key_hash="fakehash",
+        name="Test Admin",
+        role=APIKeyRole.ADMIN,
+        created_at=datetime(2026, 1, 1),
+    )
 
 
 @pytest.fixture
@@ -18,19 +29,17 @@ def mock_service():
 @pytest.fixture
 def client_with_mock_service(mock_service):
     """Create test client with mocked service and disabled lifespan."""
-    # Import here to avoid circular imports
     from app.presentation.api.dependencies import get_rate_limit_service
+    from app.presentation.api.security import verify_api_key
     from main import app
 
-    # Override the dependency
     app.dependency_overrides[get_rate_limit_service] = lambda: mock_service
+    app.dependency_overrides[verify_api_key] = lambda: _make_admin_key()
 
-    # Create client without triggering lifespan events
     client = TestClient(app, raise_server_exceptions=False)
 
     yield client
 
-    # Cleanup
     app.dependency_overrides.clear()
 
 

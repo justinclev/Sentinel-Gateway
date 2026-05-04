@@ -2,12 +2,10 @@
 
 import json
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 
 from redis.asyncio import Redis
 
-if TYPE_CHECKING:
-    from app.infrastructure.security.api_keys import APIKey, APIKeyRole
+from app.domain.gateway.models import APIKey, APIKeyRole
 
 
 class RedisAPIKeyRepository:
@@ -29,7 +27,7 @@ class RedisAPIKeyRepository:
         """Create Redis key from hash."""
         return f"{self.KEY_PREFIX}:{key_hash}"
 
-    async def get_by_hash(self, key_hash: str) -> Optional["APIKey"]:
+    async def get_by_hash(self, key_hash: str) -> APIKey | None:
         """
         Get API key by hash.
 
@@ -39,9 +37,6 @@ class RedisAPIKeyRepository:
         Returns:
             APIKey if found, None otherwise
         """
-        # Import here to avoid circular import
-        from app.infrastructure.security.api_keys import APIKey, APIKeyRole
-
         redis_key = self._make_key(key_hash)
         data = await self.redis.get(redis_key)
 
@@ -68,7 +63,7 @@ class RedisAPIKeyRepository:
             metadata=key_data.get("metadata", {}),
         )
 
-    async def create(self, api_key: "APIKey", ttl_seconds: Optional[int] = None) -> "APIKey":
+    async def create(self, api_key: APIKey, ttl_seconds: int | None = None) -> APIKey:
         """
         Create new API key in Redis.
 
@@ -99,7 +94,7 @@ class RedisAPIKeyRepository:
 
         return api_key
 
-    async def update(self, api_key: "APIKey") -> "APIKey":
+    async def update(self, api_key: APIKey) -> APIKey:
         """
         Update existing API key.
 
@@ -134,7 +129,40 @@ class RedisAPIKeyRepository:
         result = await self.redis.delete(redis_key)
         return result > 0
 
-    async def list_all(self) -> list["APIKey"]:
+    async def get_by_id(self, key_id: str) -> APIKey | None:
+        """
+        Find an API key by its key_id (scans Redis).
+
+        Args:
+            key_id: The key_id field value to look for
+
+        Returns:
+            APIKey if found, None otherwise
+        """
+        async for key in self.redis.scan_iter(match=f"{self.KEY_PREFIX}:*", count=100):
+            data = await self.redis.get(key)
+            if data:
+                key_data = json.loads(data)
+                if key_data.get("key_id") == key_id:
+                    key_hash = key.split(":", 1)[1]
+                    return APIKey(
+                        key_id=key_data["key_id"],
+                        key_hash=key_hash,
+                        name=key_data["name"],
+                        role=APIKeyRole(key_data["role"]),
+                        created_at=datetime.fromisoformat(key_data["created_at"]),
+                        expires_at=(
+                            datetime.fromisoformat(key_data["expires_at"])
+                            if key_data.get("expires_at")
+                            else None
+                        ),
+                        is_active=key_data["is_active"],
+                        rate_limit=key_data.get("rate_limit"),
+                        metadata=key_data.get("metadata", {}),
+                    )
+        return None
+
+    async def list_all(self) -> list[APIKey]:
         """
         List all API keys.
 
@@ -143,9 +171,6 @@ class RedisAPIKeyRepository:
         Returns:
             List of APIKey objects
         """
-        # Import here to avoid circular import
-        from app.infrastructure.security.api_keys import APIKey, APIKeyRole
-
         keys = []
         pattern = f"{self.KEY_PREFIX}:*"
 

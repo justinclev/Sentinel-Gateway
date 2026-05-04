@@ -17,6 +17,7 @@ from app.infrastructure.security import (
 )
 from app.presentation.api.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from app.presentation.api.routes import router as rate_limit_router
+from app.presentation.api.admin_routes import router as admin_router
 from logger import get_logger, setup_logging
 
 # Initialize settings and logging
@@ -96,6 +97,7 @@ if settings.metrics_enabled:
 
 # Include API routes
 app.include_router(rate_limit_router, prefix="/api/v1/rate-limit", tags=["Rate Limiting"])
+app.include_router(admin_router, prefix="/api/v1/admin/keys", tags=["Admin"])
 
 
 @app.get("/health", tags=["Health"])
