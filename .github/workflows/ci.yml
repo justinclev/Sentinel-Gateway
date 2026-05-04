@@ -45,7 +45,23 @@ jobs:
       
       - name: Run tests with coverage
         run: |
-          poetry run pytest tests/unit/ -v --cov=app --cov-report=term --cov-report=xml --cov-report=html
+          poetry run pytest tests/unit/ -v --cov=app --cov-report=term --cov-report=xml --cov-report=html --cov-fail-under=80
+      
+      - name: Generate coverage summary
+        if: always()
+        run: |
+          echo "## 📊 Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          poetry run pytest tests/unit/ --cov=app --cov-report=term | tail -n 20 >> $GITHUB_STEP_SUMMARY
+      
+      - name: Coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 70
+        continue-on-error: true
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -62,8 +78,24 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: htmlcov/
+          path: |
+            htmlcov/
+            coverage.xml
           retention-days: 30
+      
+      - name: Coverage badge
+        if: github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: ${{ secrets.GIST_ID }}
+          filename: sentinel-gateway-coverage.json
+          label: Coverage
+          message: ${{ steps.coverage.outputs.coverage }}%
+          valColorRange: ${{ steps.coverage.outputs.coverage }}
+          maxColorRange: 100
+          minColorRange: 0
+        continue-on-error: true
 
   lint:
     name: Lint and Format Check
