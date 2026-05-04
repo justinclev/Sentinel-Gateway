@@ -32,7 +32,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting Sentinel Gateway...")
     
     # Initialize Redis connection
-    await initialize_redis(settings.redis_url, settings.redis_max_connections)
+    await initialize_redis(
+        settings.redis_url,
+        max_connections=settings.redis_max_connections,
+        socket_connect_timeout=settings.redis_socket_connect_timeout,
+        socket_timeout=settings.redis_socket_timeout,
+    )
     logger.info("Redis connection initialized")
     
     # Initialize API key manager with Redis

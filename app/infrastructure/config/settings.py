@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,7 +37,12 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0, alias="REDIS_DB")
     redis_password: str | None = Field(default=None, alias="REDIS_PASSWORD")
     redis_max_connections: int = Field(default=50, alias="REDIS_MAX_CONNECTIONS")
-    redis_socket_connect_timeout: int = Field(default=5, alias="REDIS_SOCKET_CONNECT_TIMEOUT")
+    # Timeout for establishing a new connection (seconds). Prevents indefinite hangs on connect.
+    redis_socket_connect_timeout: int = Field(default=2, alias="REDIS_SOCKET_CONNECT_TIMEOUT")
+    # Timeout for individual socket read/write operations (seconds).
+    # If a Redis command takes longer than this, a TimeoutError is raised rather than
+    # hanging the request handler thread.
+    redis_socket_timeout: int = Field(default=2, alias="REDIS_SOCKET_TIMEOUT")
     redis_socket_keepalive: bool = Field(default=True, alias="REDIS_SOCKET_KEEPALIVE")
 
     # Rate Limiter Configuration
@@ -45,6 +50,37 @@ class Settings(BaseSettings):
     default_rate_limit: int = Field(default=100, alias="DEFAULT_RATE_LIMIT")
     default_rate_window: int = Field(default=60, alias="DEFAULT_RATE_WINDOW")
     rate_limit_storage_prefix: str = Field(default="rate_limit", alias="RATE_LIMIT_STORAGE_PREFIX")
+
+    # Rate limiting algorithm. Options:
+    #   fixed_window        – Simple counter per fixed time window. Lowest memory, but allows a
+    #                         burst of up to 2× the limit at the window boundary.
+    #   sliding_window_log  – Stores a timestamp for every request. Perfectly smooth but O(N)
+    #                         memory per identifier; only suitable for low-traffic or strict-
+    #                         accuracy requirements.
+    #   sliding_window_counter – Weighted blend of the previous and current fixed windows.
+    #                         ~O(1) memory, no boundary burst, good default for production.
+    rate_limit_algorithm: Literal["fixed_window", "sliding_window_log", "sliding_window_counter"] = Field(
+        default="sliding_window_counter", alias="RATE_LIMIT_ALGORITHM"
+    )
+
+    # Fail-open behaviour when Redis is unreachable.
+    #
+    # True  (default) — allow requests through when Redis is down. Optimises for availability;
+    #                   appropriate for non-critical rate limiting (e.g. UX throttling).
+    #                   WARNING: do NOT use this for billing enforcement or abuse prevention —
+    #                   a Redis outage will allow unlimited traffic.
+    # False           — deny requests with HTTP 503 when Redis is down. Optimises for
+    #                   correctness; required when rate limiting is a hard business control
+    #                   (billing, fraud prevention, tenant isolation).
+    rate_limit_fail_open: bool = Field(default=True, alias="RATE_LIMIT_FAIL_OPEN")
+
+    @field_validator("rate_limit_algorithm", mode="before")
+    @classmethod
+    def validate_algorithm(cls, v: str) -> str:
+        allowed = {"fixed_window", "sliding_window_log", "sliding_window_counter"}
+        if v not in allowed:
+            raise ValueError(f"rate_limit_algorithm must be one of {sorted(allowed)}, got '{v}'")
+        return v
 
     # Monitoring & Metrics
     metrics_enabled: bool = Field(default=True, alias="METRICS_ENABLED")

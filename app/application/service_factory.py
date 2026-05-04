@@ -47,7 +47,10 @@ class ServiceFactory:
         if self._repository is None:
             redis_client = await self.get_redis_client()
             self._repository = RedisRateLimitRepository(
-                redis_client, key_prefix=self._settings.rate_limit_storage_prefix
+                redis_client,
+                key_prefix=self._settings.rate_limit_storage_prefix,
+                algorithm=self._settings.rate_limit_algorithm,
+                fail_open=self._settings.rate_limit_fail_open,
             )
         return self._repository
 

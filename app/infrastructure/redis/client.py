@@ -10,16 +10,28 @@ from redis.exceptions import RedisError
 class RedisClient:
     """Async Redis client wrapper."""
 
-    def __init__(self, url: str, max_connections: int = 50):
+    def __init__(
+        self,
+        url: str,
+        max_connections: int = 50,
+        socket_connect_timeout: int = 2,
+        socket_timeout: int = 2,
+    ):
         """
         Initialize Redis client.
 
         Args:
             url: Redis connection URL
             max_connections: Maximum number of connections in pool
+            socket_connect_timeout: Seconds to wait when opening a new connection.
+            socket_timeout: Seconds to wait for a read/write operation to complete.
+                            Raising TimeoutError instead of blocking indefinitely keeps
+                            request handlers responsive during Redis slowdowns.
         """
         self._url = url
         self._max_connections = max_connections
+        self._socket_connect_timeout = socket_connect_timeout
+        self._socket_timeout = socket_timeout
         self._pool: redis.ConnectionPool | None = None
         self._client: Redis | None = None
         self._logger = logging.getLogger(__name__)
@@ -32,6 +44,8 @@ class RedisClient:
                 self._url,
                 max_connections=self._max_connections,
                 decode_responses=True,  # Makes responses human-readable strings
+                socket_connect_timeout=self._socket_connect_timeout,
+                socket_timeout=self._socket_timeout,
             )
 
             # Create the actual client
@@ -84,10 +98,20 @@ async def get_redis_client() -> RedisClient:
     return _redis_client
 
 
-async def initialize_redis(url: str, max_connections: int = 50) -> RedisClient:
+async def initialize_redis(
+    url: str,
+    max_connections: int = 50,
+    socket_connect_timeout: int = 2,
+    socket_timeout: int = 2,
+) -> RedisClient:
     """Initialize global Redis client."""
     global _redis_client
-    _redis_client = RedisClient(url, max_connections)
+    _redis_client = RedisClient(
+        url,
+        max_connections=max_connections,
+        socket_connect_timeout=socket_connect_timeout,
+        socket_timeout=socket_timeout,
+    )
     await _redis_client.connect()
     return _redis_client
 
